@@ -29,16 +29,28 @@ jobs:
           sudo apt-get update --fix-missing
           sudo apt-get install -y xvfb x11-utils libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 xdotool
 
-      - name: Setup miniconda
+#      - name: Setup miniconda
+#        uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          miniconda-version: "latest" 
+#          python-version: ${{ matrix.PYTHON_VERSION }}
+#          channel-priority: "strict"
+#          channels: "conda-forge"  
+#          mamba-version: "*"
+#          show-channel-urls: true
+	  
+      - name : Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          miniconda-version: "latest" 
-          python-version: ${{ matrix.PYTHON_VERSION }}
-          channel-priority: "strict"
-          channels: "conda-forge"  
-          mamba-version: "*"
-          show-channel-urls: true 
-
+            miniforge-variant: Mambaforge
+            python-version: 3.9
+            mamba-version: "*"
+            use-mamba: true
+            channels: conda-forge
+            channel-priority: true
+            activate-environment: bld
+            miniforge-version: latest
+	    
       - name: Setup environment
         run: |
           cd scripts
@@ -117,15 +129,27 @@ jobs:
         run: |
           sudo apt-get update --fix-missing
 
-      - name: Setup miniconda
+#      - name: Setup miniconda
+#        uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          miniconda-version: "latest" 
+#          python-version: ${{ matrix.PYTHON_VERSION }}
+#          channel-priority: "strict"
+#          channels: "conda-forge"  
+#          mamba-version: "*"
+#          show-channel-urls: true 
+
+      - name : Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          miniconda-version: "latest" 
-          python-version: ${{ matrix.PYTHON_VERSION }}
-          channel-priority: "strict"
-          channels: "conda-forge"  
-          mamba-version: "*"
-          show-channel-urls: true 
+            miniforge-variant: Mambaforge
+            python-version: 3.9
+            mamba-version: "*"
+            use-mamba: true
+            channels: conda-forge
+            channel-priority: true
+            activate-environment: bld
+            miniforge-version: latest
 
       - name: Compute Version
         id: computed_version
