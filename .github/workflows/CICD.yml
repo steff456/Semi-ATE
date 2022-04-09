@@ -43,7 +43,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
             miniforge-variant: Mambaforge
-            python-version: 3.9
+            python-version: ${{ matrix.PYTHON_VERSION }}
             mamba-version: "*"
             use-mamba: true
             channels: conda-forge
@@ -143,7 +143,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
             miniforge-variant: Mambaforge
-            python-version: 3.9
+            python-version: ${{ matrix.PYTHON_VERSION }}
             mamba-version: "*"
             use-mamba: true
             channels: conda-forge
