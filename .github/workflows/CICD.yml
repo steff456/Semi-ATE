@@ -38,7 +38,7 @@ jobs:
 #          channels: "conda-forge"  
 #          mamba-version: "*"
 #          show-channel-urls: true
-	  
+
       - name : Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -50,7 +50,7 @@ jobs:
             channel-priority: true
             activate-environment: bld
             miniforge-version: latest
-	    
+
       - name: Setup environment
         run: |
           cd scripts
