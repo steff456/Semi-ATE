@@ -4,7 +4,7 @@ Created on Tue Apr  7 18:18:33 2020
 
 @author: hoeren
 """
-
+# from ATE.testers import SCT_testers
 import qtawesome as qta
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
@@ -20,6 +20,10 @@ class ToolbarItems:
     TargetCombo = 'target_combo'
     GroupLabel = 'group_label'
     GroupCombo = 'group_combo'
+    RunGroupLabel = 'rungroup_label'
+    RunGroupCombo = 'rungroup_combo'
+    RunFlowLabel = 'runflow_label'
+    RunFlowCombo = 'runflow_combo'
 
 
 class ToolBar(ApplicationToolbar):
@@ -34,8 +38,10 @@ class ToolBar(ApplicationToolbar):
         self.active_base = ''
         self.active_target = ''
         self.project_info = project_info
+        self.project_info.run_group = ''               # TODO: this is not the fine art to define a new variable in other class....
+        self.project_info.run_flow = ''
         print("FIXME: Set width for toolbar")
-        self.setFixedWidth(600)
+        self.setFixedWidth(750)
 
         self._setup()
         self.init_toolbar_items()
@@ -48,14 +54,18 @@ class ToolBar(ApplicationToolbar):
         self._init_hardware()
         self.hardware_combo.blockSignals(False)
         self._update_target()
-        hardware, base, target = self.project_info.load_project_settings()
+        hardware, base, target, group, flow = self.project_info.load_project_settings()
         self._hardware_changed(hardware)
         self._base_changed(base)
         self._update_target()
         self._init__group()
+        self._update_rungroup()
+        self._rungroup_changed(group)
+        self._update_runflow()
+        self._runflow_changed(flow)
 
         self.project_info.update_toolbar_elements(hardware, base, target)
-        self.project_info.store_settings(hardware, base, target)
+        self.project_info.store_settings(hardware, base, target, group, flow)
 
     def init_toolbar_items(self):
         run_action = self.parent.create_action(
@@ -64,23 +74,25 @@ class ToolBar(ApplicationToolbar):
             icon=self.parent.create_icon("run"),
             triggered=self.parent.run_ate_project,
         )
-
         # Add items to toolbar
-        for item in [run_action, self.hardware_label,
+        for item in [run_action, self.rungroup_label, self.rungroup_combo,
+                     self.runflow_label, self.runflow_combo, self.hardware_label,
                      self.hardware_combo, self.base_label, self.base_combo,
                      self.target_label, self.target_combo, self.group_label,
                      self.group_combo]:
-            self.parent.add_item_to_toolbar(
-                item,
-                self,
-                "run",
-            )
+            self.parent.add_item_to_toolbar(item, self, "run")
 
     def _setup(self):
+        self._setup_rungroup()
+        self._setup_runflow()
         self._setup_hardware()
         self._setup_base()
         self._setup_target()
         self._setup_group()
+        self._setup_monitor()
+
+    def _setup_monitor(self):
+        self.monitor = QtWidgets.QTextEdit("Monitor:")
 
     def _setup_hardware(self):
         self.hardware_label = QtWidgets.QLabel("Hardware:")
@@ -130,6 +142,26 @@ class ToolBar(ApplicationToolbar):
         self.group_combo.ID = ToolbarItems.GroupCombo
         self.group_combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
+    def _setup_rungroup(self):
+        self.rungroup_label = QtWidgets.QLabel("run Group:")
+        self.rungroup_label.setStyleSheet("background-color: transparent;")
+        self.rungroup_label.ID = ToolbarItems.RunGroupLabel
+
+        self.rungroup_combo = QtWidgets.QComboBox()
+        self.rungroup_combo.ID = ToolbarItems.RunGroupCombo
+        self.rungroup_combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+
+    def _setup_runflow(self):
+        self.runflow_label = QtWidgets.QLabel("FLow:")
+        self.runflow_label.setStyleSheet("background-color: transparent;")
+        self.runflow_label.ID = ToolbarItems.RunFlowLabel
+
+        print("FIXME: Set combobox for Flow")
+        self.runflow_combo = QtWidgets.QLineEdit()              # TODO: change to combo if you know how to get all flows from a group
+        self.runflow_combo.ID = ToolbarItems.RunFlowCombo
+        self.runflow_combo.setFixedWidth(50)
+        #self.runflow_combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+
     def _init__group(self):
         self.group_combo.blockSignals(True)
         groups = self.project_info.get_groups()
@@ -151,6 +183,8 @@ class ToolBar(ApplicationToolbar):
         self.group_combo.blockSignals(False)
 
     def _connect_event_handler(self):
+        self.rungroup_combo.currentTextChanged.connect(self._rungroup_changed)
+        self.runflow_combo.editingFinished.connect(self._runflow_changed)           # TODO: change to currentTextChanged if combo available
         self.hardware_combo.currentTextChanged.connect(self._hardware_changed)
         self.base_combo.currentTextChanged.connect(self._base_changed)
         self.target_combo.currentTextChanged.connect(self._target_changed)
@@ -179,6 +213,7 @@ class ToolBar(ApplicationToolbar):
         self.group_combo.addItem(name)
         item = self.group_combo.model().item(self.group_combo.count() - 1, 0)
         item.setCheckState(QtCore.Qt.Checked)
+        self._update_rungroup()
 
     def _update_group_item_state(self, index: int, state: QtCore.Qt):
         item = self.group_combo.model().item(index, 0)
@@ -238,8 +273,26 @@ class ToolBar(ApplicationToolbar):
         self.project_info.active_hardware = selected_hardware
         self._update_target()
         self.project_info.update_toolbar_elements(self._get_hardware(), self._get_base(), self._get_target())
-        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target())
+        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target(), self._get_rungroup(), self._get_runflow())
         self.parent.select_hardware.emit(selected_hardware)
+
+    @QtCore.pyqtSlot(str)
+    def _rungroup_changed(self, selected_group):
+        self.project_info.run_group = selected_group
+        self.rungroup_combo.blockSignals(True)
+        self.rungroup_combo.setCurrentText(selected_group)
+        self.rungroup_combo.blockSignals(False)
+        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target(), selected_group, self._get_runflow())
+
+    # @QtCore.pyqtSlot(str)                                         # TODO: change if combo available
+    @QtCore.pyqtSlot()
+    def _runflow_changed(self, selected_flow=None):
+        if selected_flow is None:
+            selected_flow = self._get_runflow()
+        else:
+            self.runflow_combo.setText(selected_flow)
+        self.project_info.run_flow = selected_flow
+        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target(), self._get_rungroup(), selected_flow)
 
     @QtCore.pyqtSlot(str)
     def _base_changed(self, selected_base):
@@ -252,7 +305,7 @@ class ToolBar(ApplicationToolbar):
 
         self.parent.select_base.emit(selected_base)
         self.project_info.update_toolbar_elements(self._get_hardware(), self._get_base(), self._get_target())
-        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target())
+        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target(), self._get_rungroup(), self._get_runflow())
 
     @QtCore.pyqtSlot(str)
     def _target_changed(self, selected_target):
@@ -273,7 +326,7 @@ class ToolBar(ApplicationToolbar):
             pass
 
         self.project_info.update_toolbar_elements(self._get_hardware(), self._get_base(), self._get_target())
-        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target())
+        self.project_info.store_settings(self._get_hardware(), self._get_base(), self._get_target(), self._get_rungroup(), self._get_runflow())
 
     def _update_target(self):
         self.target_combo.blockSignals(True)
@@ -290,6 +343,16 @@ class ToolBar(ApplicationToolbar):
 
         self.project_info.update_toolbar_elements(self._get_hardware(), self._get_base(), self._get_target())
         self.target_combo.blockSignals(False)
+
+    def _update_rungroup(self):
+        self.rungroup_combo.blockSignals(True)
+        self.rungroup_combo.clear()
+        for group in self.project_info.get_groups():
+            self.rungroup_combo.addItem(group.name)
+        self.rungroup_combo.blockSignals(False)
+
+    def _update_runflow(self):
+        print('TODO: get all flows')
 
     def on_run(self):
         print("run button pressed")
@@ -309,13 +372,26 @@ class ToolBar(ApplicationToolbar):
     def _get_target(self):
         return self.target_combo.currentText()
 
+    def _get_rungroup(self):
+        return self.rungroup_combo.currentText()
+
+    def _get_runflow(self):
+        # return self.runflow_combo.currentText()       # TODO: change if combo available
+        return self.runflow_combo.text()
+
     def clean_up(self):
         self.hardware_combo.blockSignals(True)
         self.base_combo.blockSignals(True)
         self.target_combo.blockSignals(True)
+        self.rungroup_combo.blockSignals(True)
+        self.runflow_combo.blockSignals(True)
         self.hardware_combo.clear()
         self.base_combo.setCurrentText('')
         self.target_combo.clear()
+        self.rungroup_combo.clear()
+        self.runflow_combo.setText('')
         self.hardware_combo.blockSignals(False)
         self.base_combo.blockSignals(False)
         self.target_combo.blockSignals(False)
+        self.rungroup_combo.blockSignals(False)
+        self.runflow_combo.blockSignals(False)

@@ -16,6 +16,8 @@ from ate_spyder.widgets.navigation import ProjectNavigation
 from ate_spyder.widgets.toolbar import ToolBar
 from ate_spyder.widgets.actions_on.tests.TestItems.TestItemChild import (TestItemChild, TestItemChildTarget)
 # Third party imports
+from ate_spyder.widgets.actions_on.ctrl.control import Control  # CJ
+
 # Local imports
 
 # Localization
@@ -72,6 +74,11 @@ class ATEWidget(PluginMainWidget):
         # Layout
         layout = QVBoxLayout()
         layout.addWidget(self.tree)
+
+        # CJ control:
+        self.control = Control(self.project_info)
+        layout.addWidget(self.control)
+
         self.setLayout(layout)
 
         # Signals
@@ -99,6 +106,8 @@ class ATEWidget(PluginMainWidget):
         """For now the run of an ATE project is not integrated in the global
         run button yet"""
         pass
+        self.control(self.project_info)
+        self.control.show()
 
     def context_menu_manager(self, point):
         # https://riverbankcomputing.com/pipermail/pyqt/2009-April/022668.html
@@ -169,6 +178,7 @@ class ATEWidget(PluginMainWidget):
         self.toolbar.clean_up()
         self.project_info.project_name = ''
         self.tree.setModel(None)
+        self.control.close()
 
     def delete_test(self, path):
         from pathlib import Path

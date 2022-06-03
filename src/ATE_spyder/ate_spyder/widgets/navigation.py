@@ -1208,11 +1208,13 @@ class ProjectNavigation(QObject):
     def last_project_setting(self):
         return os.path.join(self.project_directory, '.lastsettings')
 
-    def store_settings(self, hardware, base, target):
+    def store_settings(self, hardware, base, target, group, flow):
         import json
         settings = {'settings': {'hardware': hardware,
                                  'base': base,
-                                 'target': target}
+                                 'target': target,
+                                 'group': group,
+                                 'flow': flow}
                     }
 
         with open(self.last_project_setting(), 'w') as f:
@@ -1222,18 +1224,18 @@ class ProjectNavigation(QObject):
         import json
         settings_path = self.last_project_setting()
         if not os.path.exists(settings_path):
-            return '', '', ''
+            return '', '', '', '', ''
 
         with open(settings_path, 'r') as f:
             settings = json.load(f)
             try:
                 settings = settings['settings']
                 if not len(settings['hardware']):
-                    return '', '', ''
+                    return '', '', '', '', ''
 
-                return settings['hardware'], settings['base'], settings['target']
+                return settings['hardware'], settings['base'], settings['target'], settings['group'], settings['flow']
             except Exception:
-                return '', '', ''
+                return '', '', '', '', ''
 
     def get_version(self) -> str:
         return Version.get(self.get_file_operator()).version

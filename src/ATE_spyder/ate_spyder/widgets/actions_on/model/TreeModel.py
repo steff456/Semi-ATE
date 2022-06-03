@@ -43,7 +43,7 @@ class TreeModel(QtGui.QStandardItemModel):
         self._setup()
         self._connect_action_handler()
 
-        hardware, base, target = self.project_info.load_project_settings()
+        hardware, base, target, group, flow = self.project_info.load_project_settings()
         self.project_info.update_toolbar_elements(hardware, base, target)
         self.parent.update_settings.emit(hardware, base, target)
 
